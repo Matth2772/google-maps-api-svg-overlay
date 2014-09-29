@@ -11,7 +11,7 @@ function SvgOverlay(options) {
   this.center_ = new google.maps.LatLng(0, 0);
 
   if (!this.options_.layer) {
-    this.options_.layer = 'overlayLayer';
+    this.options_.layer = 'mapPane';
   }
 
   if (this.options_.map) {
@@ -71,34 +71,23 @@ SvgOverlay.prototype.getSvg = function() {
  * Internal method. Called when the layer needs an update.
  */
 SvgOverlay.prototype.draw = function() {
-  var projection = this.getProjection(),
-    style, center, width, offset, left, top, factor;
+  var projection = this.getProjection(), 
+      style, center, width, left, top, sw, ne;
 
   if (!projection || !this.svg_) {
     return;
   }
-
+  
   style = this.container_.style;
+  sw = projection.fromLatLngToDivPixel(this.options_.bounds.getSouthWest());
+  ne = projection.fromLatLngToDivPixel(this.options_.bounds.getNorthEast());
 
-  // compute layer offset
-  center = projection.fromLatLngToDivPixel(this.center_);
-  width = Math.round(projection.getWorldWidth());
-  offset = width / 2;
+  // scale svg to bounds
+  this.svg_.setAttribute('width', (ne.x - sw.x));
+  this.svg_.setAttribute('height', (sw.y - ne.y));
 
-  left = Math.round(center.x) - offset;
-  top = Math.round(center.y) - offset;
-
-  // compute offset for small zoom levels
-  factor = Math.max(1024 / width, 1) - 1;
-
-  // scale svg to world bounds
-  this.svg_.setAttribute('width', width);
-  this.svg_.setAttribute('height', width);
-
-  // apply offset
-  style.left = left + 'px';
-  style.top = top + 'px';
-  style.marginLeft = (-factor * offset) + 'px';
+  style.left = sw.x + 'px';
+  style.top = ne.y + 'px';
 };
 
 /**
